@@ -2,6 +2,8 @@ import React, { useState } from "react";
 
 import "./Game.css";
 import { Board } from "../Board/Board";
+import { ResultModal } from "../ResultModal/ResultModal";
+import { calculateWinner } from "../../utils/WinnerCalculator";
 
 export const Game = () => {
 	const [cellValues, setCellValues] = useState([
@@ -16,17 +18,42 @@ export const Game = () => {
 		"",
 	]);
 	const [xIsNext, setXIsNext] = useState(true);
-	const winningsCombination = [];
+	const [isGameOver, setIsGameOver] = useState(false);
+	const [numberOfTurnsLeft, setNumbersOfTurnsLeft] = useState(9);
+	const [winner, setWinner] = useState();
+	const [winningsCombination, setWinningCombination] = useState();
 
 	const isCellEmpty = (cellIndex) => cellValues[cellIndex] === "";
+
+	const restartGame = () => {
+		setCellValues(["", "", "", "", "", "", "", "", ""]);
+		setXIsNext(true);
+		setIsGameOver(false);
+		setWinner(undefined);
+		setNumbersOfTurnsLeft(9);
+		setWinningCombination([]);
+	};
 
 	const onCellClicked = (cellIndex) => {
 		if (isCellEmpty(cellIndex)) {
 			const newCellValues = [...cellValues];
-
 			newCellValues[cellIndex] = xIsNext ? "X" : "O";
+
+			const newNumberOfTurnsLeft = numberOfTurnsLeft - 1;
+
+			// Calculate the result
+			const calcResult = calculateWinner(
+				newCellValues,
+				newNumberOfTurnsLeft,
+				cellIndex
+			);
+
 			setCellValues(newCellValues);
 			setXIsNext(!xIsNext);
+			setIsGameOver(calcResult.hasResult);
+			setWinner(calcResult.winner);
+			setNumbersOfTurnsLeft(newNumberOfTurnsLeft);
+			setWinningCombination(calcResult.winningCombination);
 		}
 	};
 
@@ -40,19 +67,11 @@ export const Game = () => {
 					cellClicked={onCellClicked}
 				/>
 			</div>
-
-			<div id="modal-overlay">
-				<div id="game-result-modal">
-					<div id="result-container">
-						<div id="winner-container">
-							<span></span>
-						</div>
-					</div>
-					<div id="new-game-container">
-						<button id="new-game-button">Start New Game</button>
-					</div>
-				</div>
-			</div>
+			<ResultModal
+				isGameOver={isGameOver}
+				winner={winner}
+				onNewGameClicked={restartGame}
+			/>
 		</>
 	);
 };
